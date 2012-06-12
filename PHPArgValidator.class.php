@@ -20,11 +20,16 @@ class ArgValidator{
 	* notblank		-	string must not be blank (implies 'string')
 	* string		-	must be string
 	* array			- 	must be array
+	* func			- 	provided Closure must return true
+	* lbound arg	-	must not be below arg (e.g. "lbound 2")
+	* ubound arg	- 	must not be above arg (e.g. "ubound 600")
 	*/
 	public function validateArgs($argArray, $argDesc)
 	{
 		$this->argArray = $argArray;
 		$this->argDesc = $argDesc;
+		
+		//validate our own args
 		if(!is_array($this->argDesc))
 		{
 			throw new Exception("Arguments Description must be an array");
@@ -40,19 +45,35 @@ class ArgValidator{
 		$retArr = array();
 		
 		//loop through each argument to be validated
-		foreach($this->argDesc as $arg => $constraintString)
+		foreach($this->argDesc as $arg => $constraintArr)
 		{	
-			//get the constraints for the current arg
-			$tempconstraints = explode(",", $constraintString);
-
+			if(!is_array($constraintArr)) // ensure constraints are provided as an array
+			{
+				throw new Exception("Constraints must be an array");
+				return false;
+			}
 			//preprocess constraints to trim and apply optional constraint
 			$constraints = array();
-			foreach($tempconstraints as $tc)
-			{
-				$newtc = trim($tc);				
-				if($newtc == "optional" && !isset($this->argArray[$arg])) // check for optional arg
+			foreach($constraintArr as $tc)
+			{	
+				$newtc = null;
+				if($tc instanceof Closure ) // don't try to trim closures
 				{
-					continue 2; // ignore constraints if optional arg is not present
+					$newtc = $tc;
+				}
+				else{
+					$temptc = explode(" ", $tc, 2); //split out constraint and arguments to constaint if applicable e.g. "lbound 1"
+					
+					$newtc["constraint"] = trim($temptc[0]);	
+					if(count($temptc) > 1) // if constaint has an argument
+					{
+						$newtc["constraintArg"] = $temptc[1];	
+					}
+					
+					if($newtc["constraint"] == "optional" && !isset($this->argArray[$arg])) // check for optional arg
+					{
+						continue 2; // ignore constraints if optional arg is present
+					}
 				}
 				$constraints[] = $newtc;
 
@@ -66,41 +87,59 @@ class ArgValidator{
 			//get the current arg value
 			$curValue = $this->argArray[$arg];
 			
-			
 			foreach($constraints as $c)
-			{
-				//apply the constraints
-				switch($c)
-				{	
-					case "string": 
-						$this->checkIsString($curValue, $arg);
-						break;
+			{	
+				//apply contraints which cannot be done using a switch
+				if($c instanceof Closure)
+				{
+					$this->checkUserFunc($c,$curValue,$arg);				
+				}
+				else
+				{
+				
+					//apply the constraints
+					switch($c["constraint"])
+					{	
+						case "string": 
+							$this->checkIsString($curValue, $arg);
+							break;
+							
+						case "numeric":
+							$this->checkIsNumeric($curValue, $arg);
+							break;	
+							
+						case "int" :
+							$this->checkIsInt($curValue, $arg);
+							break;
+							
+						case "notzero" :
+							$this->checkNotZero($curValue, $arg);
+							break;
+							
+						case "notblank" :
+							$this->checkNotBlank($curValue, $arg);
+							break;
+							
+						case "array":
+							$this->checkIsArray($curValue, $arg);
+							break;
+							
+						case "lbound":
+							$this->checkLbound($c["constraintArg"],$curValue,$arg);
+							break;
 						
-					case "numeric":
-						$this->checkIsNumeric($curValue, $arg);
-						break;	
+						case "ubound":
+							$this->checkUbound($c["constraintArg"],$curValue,$arg);
+							break;
+							
+						case "optional"; // handled above - needed here to prevent exception
+							break;
+							
+						default:
+							throw new Exception("Constraint ". htmlentities($c["constraint"]) . " is unsupported");
+							break;
 						
-					case "int" :
-						$this->checkIsInt($curValue, $arg);
-						break;
-						
-					case "notzero" :
-						$this->checkNotZero($curValue, $arg);
-						break;
-						
-					case "notblank" :
-						$this->checkNotBlank($curValue, $arg);
-						break;
-					case "array":
-						$this->checkIsArray($curValue, $arg);
-						break;
-					case "optional"; // handled above - needed here to prevent exception
-						break;
-						
-					default:
-						throw new Exception("Constraint ". htmlentities($c) . " is unsupported");
-						break;
-					
+					}
 				}
 			}
 			
@@ -164,6 +203,53 @@ class ArgValidator{
 		if(!is_array($value))
 		{
 			call_user_func($this->errCallback,"Argument is not an array: ". $arg, $arg, $value);
+			return false;
+		}
+		return true;
+	}
+	
+	private function checkUserFunc($func, $value, $arg)
+	{
+		if(call_user_func($func,$value) !== true)
+		{
+			call_user_func($this->errCallback,"Argument failed user function validation: ". $arg, $arg, $value);
+			return false;
+		}
+		return true;
+	}
+	
+	private function checkLbound($lbound, $value, $arg)
+	{
+		$lbound = (int) $lbound;
+		if(!is_numeric($lbound))
+		{
+			call_user_func($this->errCallback,"Argument to lbound must be numeric: ". $arg, $arg, $value);
+			return false;
+		}
+		else{
+			if(!$this->checkIsNumeric($value, $arg) || $value < $lbound)
+		{
+			call_user_func($this->errCallback,"Argument is below lbound(".$lbound."): ". $arg, $arg, $value);
+			return false;
+		}
+		return true;
+		}
+	}
+	private function checkUbound($ubound, $value, $arg)
+	{
+		$ubound= (int) $ubound;
+		if(!is_numeric($ubound))
+		{
+			call_user_func($this->errCallback,"Argument to ubound must be numeric: ". $arg, $arg, $value);
+			return false;
+		}
+		else{
+			if(!$this->checkIsNumeric($value, $arg) || $value > $ubound)
+		{
+			call_user_func($this->errCallback,"Argument is below ubound(".$ubound."): ". $arg, $arg, $value);
+			return false;
+		}
+		return true;
 		}
 	}
 }
