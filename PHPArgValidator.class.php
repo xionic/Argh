@@ -20,9 +20,10 @@ class ArgValidator{
 	* notblank		-	string must not be blank (implies 'string')
 	* string		-	must be string
 	* array			- 	must be array
-	* func			- 	provided Closure must return true
+	* func			- 	provided Closure must return true. 
 	* lbound arg	-	must not be below arg (e.g. "lbound 2")
 	* ubound arg	- 	must not be above arg (e.g. "ubound 600")
+	* regex arg		- 	must match regex given be arg
 	*/
 	public function validateArgs($argArray, $argDesc)
 	{
@@ -130,6 +131,10 @@ class ArgValidator{
 						
 						case "ubound":
 							$this->checkUbound($c["constraintArg"],$curValue,$arg);
+							break;
+						
+						case "regex":
+							$this->checkRegex($c["constraintArg"],$curValue,$arg);
 							break;
 							
 						case "optional"; // handled above - needed here to prevent exception
@@ -251,6 +256,16 @@ class ArgValidator{
 		}
 		return true;
 		}
+	}
+	
+	private function checkRegex($regex, $value, $arg)
+	{
+		if((preg_match($regex,$value)) !== 1)
+		{
+			call_user_func($this->errCallback,"Argument is does not match regex(".$regex."): ". $arg, $arg, $value);
+			return false;
+		}
+		return true;
 	}
 }
 

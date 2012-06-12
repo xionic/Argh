@@ -3,7 +3,20 @@ PHPArgValidator
 
 A PHP helper class to validate function arguments
 
-EXAMPLES:
+* Supported Constraints:
+	* int			-	must be an integer (implies 'numeric')
+	* numeric		-	must be numeric
+	* notzero		-	must not be zero (implies 'numeric')
+	* notblank		-	string must not be blank (implies 'string')
+	* string		-	must be string
+	* array			- 	must be array
+	* func			- 	provided Closure must return true. 
+	* lbound arg	-	must not be below arg (e.g. "lbound 2")
+	* ubound arg	- 	must not be above arg (e.g. "ubound 600")
+	* regex arg		- 	must match regex given be arg
+	*/
+
+EXAMPLE USAGE:
 ===============
 
 	
@@ -23,7 +36,11 @@ function handleArgValidationError($msg, $argName="", $argValue="")
 $av = new ArgValidator("handleArgValidationError");
 
 $apiargs = $av->validateArgs($_GET, array(
-	"test" => array("string", "notblank"),
+	"test1" => array("string", "notblank"),
 	"test2" => array(function($a){return $a > 0;}),
+	"test3" => array("lbound 5","ubound 500"),
+	"test4" => array("regex /a/"),
+	"test5" => array("notzero"),
+	"test5" => array("array"),
 ));
  
