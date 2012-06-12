@@ -1,20 +1,29 @@
 PHPArgValidator
 ===============
 
-A PHP helper class to validate function arguments
+A PHP helper class to validate associative arrays
 
-* Supported Constraints:
-	* int			-	must be an integer (implies 'numeric')
-	* numeric		-	must be numeric
-	* notzero		-	must not be zero (implies 'numeric')
-	* notblank		-	string must not be blank (implies 'string')
-	* string		-	must be string
-	* array			- 	must be array
-	* func			- 	provided Closure must return true. 
-	* lbound arg	-	must not be below arg (e.g. "lbound 2")
-	* ubound arg	- 	must not be above arg (e.g. "ubound 600")
-	* regex arg		- 	must match regex given be arg
+
 	*/
+	
+EXPOSED FUNCTIONS:
+===============
+validateArgs($arrayOfArgumentsToBeValidated, $arrayOfConstraints)
+	* Supported Constraints:
+		* int			-	must be an integer (implies 'numeric')
+		* numeric		-	must be numeric
+		* notzero		-	must not be zero (implies 'numeric')
+		* notblank		-	string must not be blank (implies 'string')
+		* string		-	must be string
+		* array			- 	must be array
+		* func			- 	provided Closure must return true. 
+		* lbound arg	-	must not be below arg (e.g. "lbound 2")
+		* ubound arg	- 	must not be above arg (e.g. "ubound 600")
+		* regex arg		- 	must match regex given be arg
+	See example usage below
+
+getVersion
+	returns the version number of this clss
 
 EXAMPLE USAGE:
 ===============

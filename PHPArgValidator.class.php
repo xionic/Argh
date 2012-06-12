@@ -6,6 +6,8 @@ class ArgValidator{
 	
 	public $argArray, $argDesc, $errCallback;
 	
+	private $version = "PHPArgValidator Version 0.9";
+	
 	public function __construct($errCallback){
 		// $this->argArray = $argArray;
 		// $this->argDesc = $argDesc;
@@ -83,7 +85,7 @@ class ArgValidator{
 			if(!isset($this->argArray[$arg]))
 			{
 				call_user_func($this->errCallback,"Missing argument: ". $arg, $arg);
-				return false;
+				continue;
 			}
 			//get the current arg value
 			$curValue = $this->argArray[$arg];
@@ -266,6 +268,11 @@ class ArgValidator{
 			return false;
 		}
 		return true;
+	}
+	
+	public function getVersion()
+	{
+		return $this->version;
 	}
 }
 
