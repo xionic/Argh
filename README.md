@@ -23,7 +23,7 @@ validateArgs($arrayOfArgumentsToBeValidated, $arrayOfConstraints)
 	See example usage below
 
 getVersion
-	returns the version number of this clss
+	returns the version number of this class
 
 EXAMPLE USAGE:
 ===============
@@ -35,6 +35,7 @@ EXAMPLE USAGE:
 function handleArgValidationError($msg, $argName="", $argValue="")
 {
 	echo "<pre>";
+	echo "There has been a validation error"
 	var_dump($msg);
 	var_dump($argName);
 	var_dump($argValue);
@@ -42,7 +43,7 @@ function handleArgValidationError($msg, $argName="", $argValue="")
 	exit;
 }
 
-$av = new ArgValidator("handleArgValidationError");
+$av = new ArgValidator("handleArgValidationError");  // Closures will also work
 
 $apiargs = $av->validateArgs($_GET, array(
 	"test1" => array("string", "notblank"),
