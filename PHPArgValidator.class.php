@@ -226,7 +226,7 @@ class ArgValidator{
 	
 	private function checkLbound($lbound, $value, $arg)
 	{
-		$lbound = (int) $lbound;
+		$lbound = (float) $lbound;
 		if(!is_numeric($lbound))
 		{
 			call_user_func($this->errCallback,"Argument to lbound must be numeric: ". $arg, $arg, $value);
@@ -245,7 +245,7 @@ class ArgValidator{
 	
 	private function checkUbound($ubound, $value, $arg)
 	{
-		$ubound = (int) $ubound;
+		$ubound = (float) $ubound;
 		if(!is_numeric($ubound))
 		{
 			call_user_func($this->errCallback,"Argument to ubound must be numeric: ". $arg, $arg, $value);
