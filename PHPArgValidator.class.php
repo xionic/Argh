@@ -4,28 +4,26 @@
 */
 class ArgValidator{
 	
-	public $argArray, $argDesc, $errCallback;
+	private $argArray, $argDesc, $errCallback;
 	
 	private $version = "PHPArgValidator Version 0.9";
 	
 	public function __construct($errCallback){
-		// $this->argArray = $argArray;
-		// $this->argDesc = $argDesc;
 		$this->errCallback = $errCallback;
 	}
 	/**
-	* function to validate GET args for the rest API and return an array of results. it supports validation constraints for each argument.
-	* Supported Constraints:
-	* int			-	must be an integer (implies 'numeric')
-	* numeric		-	must be numeric
-	* notzero		-	must not be zero (implies 'numeric')
-	* notblank		-	string must not be blank (implies 'string')
-	* string		-	must be string
-	* array			- 	must be array
-	* func			- 	provided Closure must return true. 
-	* lbound arg	-	must not be below arg (e.g. "lbound 2")
-	* ubound arg	- 	must not be above arg (e.g. "ubound 600")
-	* regex arg		- 	must match regex given be arg
+	 * function to validate GET args for the rest API and return an array of results. it supports validation constraints for each argument.
+	 * Supported Constraints:
+	 * int			-	must be an integer (implies 'numeric')
+	 * numeric		-	must be numeric
+	 * notzero		-	must not be zero (implies 'numeric')
+	 * notblank		-	string must not be blank (implies 'string')
+	 * string		-	must be string
+	 * array			- 	must be array
+	 * func			- 	provided Closure must return true. 
+	 * lbound arg	-	must not be below arg (e.g. "lbound 2")
+	 * ubound arg	- 	must not be above arg (e.g. "ubound 600")
+	 * regex arg		- 	must match regex given be arg
 	*/
 	public function validateArgs($argArray, $argDesc)
 	{
@@ -64,8 +62,9 @@ class ArgValidator{
 				{
 					$newtc = $tc;
 				}
-				else{
-					$temptc = explode(" ", $tc, 2); //split out constraint and arguments to constaint if applicable e.g. "lbound 1"
+				else
+				{
+					$temptc = explode(" ", $tc, 2); //split out constraint and arguments to constraint if applicable e.g. "lbound 1"
 					
 					$newtc["constraint"] = trim($temptc[0]);	
 					if(count($temptc) > 1) // if constaint has an argument
@@ -233,30 +232,33 @@ class ArgValidator{
 			call_user_func($this->errCallback,"Argument to lbound must be numeric: ". $arg, $arg, $value);
 			return false;
 		}
-		else{
-			if(!$this->checkIsNumeric($value, $arg) || $value < $lbound)
+		else
 		{
-			call_user_func($this->errCallback,"Argument is below lbound(".$lbound."): ". $arg, $arg, $value);
-			return false;
-		}
-		return true;
+			if(!$this->checkIsNumeric($value, $arg) || $value < $lbound)
+			{
+				call_user_func($this->errCallback,"Argument is below lbound(".$lbound."): ". $arg, $arg, $value);
+				return false;
+			}
+			return true;
 		}
 	}
+	
 	private function checkUbound($ubound, $value, $arg)
 	{
-		$ubound= (int) $ubound;
+		$ubound = (int) $ubound;
 		if(!is_numeric($ubound))
 		{
 			call_user_func($this->errCallback,"Argument to ubound must be numeric: ". $arg, $arg, $value);
 			return false;
 		}
-		else{
-			if(!$this->checkIsNumeric($value, $arg) || $value > $ubound)
+		else
 		{
-			call_user_func($this->errCallback,"Argument is below ubound(".$ubound."): ". $arg, $arg, $value);
-			return false;
-		}
-		return true;
+			if(!$this->checkIsNumeric($value, $arg) || $value > $ubound)
+			{
+				call_user_func($this->errCallback,"Argument is below ubound(".$ubound."): ". $arg, $arg, $value);
+				return false;
+			}
+			return true;
 		}
 	}
 	
@@ -275,7 +277,5 @@ class ArgValidator{
 		return $this->version;
 	}
 }
-
-
 
 ?>

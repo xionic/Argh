@@ -63,3 +63,5 @@ $apiargs = $av->validateArgs($_GET, array(
 	)
 );
 ```
+
+See Test-Examples Directory for more examples
