@@ -44,6 +44,9 @@ class ArgValidator{
 		
 		//array to be returned
 		$retArr = array();
+
+		//expand wildcards :S
+		$this->expandDescWildcards();
 		
 		//loop through each argument to be validated
 		foreach($this->argDesc as $arg => $constraintArr)
@@ -72,7 +75,7 @@ class ArgValidator{
 						$newtc["constraintArg"] = $temptc[1];	
 					}
 					
-					if($newtc["constraint"] == "optional" && !isset($this->argArray[$arg])) // check for optional arg
+					if($newtc["constraint"] == "optional" && !$this->checkArgExists($arg)) // check for optional arg
 					{
 						continue 2; // ignore constraints if optional arg is present
 					}
@@ -81,13 +84,13 @@ class ArgValidator{
 
 			}
 		
-			if(!isset($this->argArray[$arg]))
+			if(!$this->checkArgExists($arg))
 			{
-				call_user_func($this->errCallback,"Missing argument: ". $arg, $arg);
+				call_user_func($this->errCallback,"Missing argument: ". $arg, $arg, null);
 				continue;
 			}
-			//get the current arg value
-			$curValue = $this->argArray[$arg];
+			//get the current arg value - multi-level support
+			$curValue = $this->getArg($arg);
 			
 			foreach($constraints as $c)
 			{	
@@ -271,6 +274,71 @@ class ArgValidator{
 		}
 		return true;
 	}
+
+	//get an arg from the array to validate - to support subarrays etc e.g. /var1/subvar1 /var1/subvar2
+	private function getArg($path){
+		return $this->_getArg($path);
+	}
+
+	//check an arg at the specifiec path in the argArray exists - to support subarrays etc e.g. /var1/subvar1 /var1/subvar2
+	private function checkArgExists($path){
+		return $this->_getArg($path,true);
+	}
+
+	// function to do the work of both resolving an array "path" to a value, or checking if it's set
+	private function _getArg($path, $justCheckIsSet = false){
+		//shortcut
+		if(substr($path,0,1) != "/"){ // whether we have a path starting with / if not it's a normal single level argument
+			if($justCheckIsSet)
+				return isset($this->argArray[$path]);	
+			else
+				return $this->argArray[$path];
+		}		
+		$pathComponents = explode("/",$path);
+		//discard the first empty element
+		$pathComponents = array_slice($pathComponents,1);
+		//and the last if it's empty i.e. a traiing /
+		if($pathComponents[count($pathComponents)-1] == "")
+			$pathComponents = array_slice($pathComponents,0,count($pathComponents)-1);
+			
+		$returnVal = $this->argArray;
+		foreach($pathComponents as $c){
+			if($justCheckIsSet && !isset($returnVal[$c]))
+				return false;
+			$returnVal = $returnVal[$c];
+		}
+		if($justCheckIsSet)
+			return true;
+		else
+			return $returnVal;
+	}
+
+	//expand wildcards in the argDesc array e.g. /test/* -> /test/1 /test/2 /test/3 ... /test/[array length]
+	private function expandDescWildcards(){
+		$keys = array_keys($this->argDesc);
+		for($i = 0; $i < count($keys); $i++){
+			//do we have a wildcard?
+			if(($pos = strpos($keys[$i],"/*/")) !== false){ // note: this is NOT regex - it is literally /*/
+				//get the array at this layer
+				$pathComponents = explode("/",substr($keys[$i],0,$pos)); // path up to the *
+				$pathComponents = array_slice($pathComponents,1); //discard the first empty element
+				$curVal = $this->argArray;
+				foreach($pathComponents as $c){
+					$curVal = $curVal[$c];
+				}
+				//add a new elem to argDesc for each elem in the array - could be hairy for large arrays :/
+				for($elemCounter = 0; $elemCounter < count($curVal); $elemCounter++){
+					//append onto the argDesc array with expanded path. Use the same checks e.g. /test/1/restOfarray, /test/2/restOfArray ...
+					$newKey = substr($keys[$i],0,$pos) . "/" . $elemCounter . "/" . substr($keys[$i],$pos+3);
+					$keys[] = $newKey; //push new key on so it too is processed by the super loop
+					$this->argDesc[$newKey] = $this->argDesc[$keys[$i]];
+				}
+				//finally remove the wildcard entry
+				unset($this->argDesc[$keys[$i]]);
+			}
+		}
+	}
+
 	
 	public function getVersion()
 	{
