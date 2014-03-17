@@ -6,7 +6,7 @@ A powerful PHP helper class to validate arrays.
 The primary usage is to validate arguments passed to a web server (i.e. validating $_GET and $_POST vars) against a series of per variable checks.
 For example:
 
-```
+```php
 $av->validateArgs(
 	$_GET, //array to validate
 	array( //array of what to validate
@@ -18,7 +18,7 @@ $av->validateArgs(
 
 It can be used for much more general purposes too. For instance, it can be used as part of a web services testing framework to validate responses to REST/JSON requests; Parsing the JSON into a PHP array using json_decode, one can then validate both the structure, and content of the resulting array thusly:
 
-```
+```php
 $av->validateArgs(
 	$decodedJSON,
 	array(
