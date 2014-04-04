@@ -290,7 +290,7 @@ class ArgValidator{
 		//shortcut
 		if(substr($path,0,1) != "/"){ // whether we have a path starting with / if not it's a normal single level argument
 			if($justCheckIsSet)
-				return isset($this->argArray[$path]);	
+				return array_key_exists($path, $this->argArray);	
 			else
 				return $this->argArray[$path];
 		}		
