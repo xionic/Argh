@@ -303,7 +303,7 @@ class ArgValidator{
 			
 		$returnVal = $this->argArray;
 		foreach($pathComponents as $c){
-			if($justCheckIsSet && !isset($returnVal[$c]))
+			if($justCheckIsSet && !array_key_exists($c, $returnVal))
 				return false;
 			$returnVal = $returnVal[$c];
 		}
