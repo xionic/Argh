@@ -1,4 +1,4 @@
-PHPArgValidator
+Argh
 ===============
 
 A powerful PHP helper class to validate arrays.
