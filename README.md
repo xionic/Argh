@@ -39,7 +39,7 @@ Argh::validateArgs(
 
 This flexible path specification structure combined with the checks below (particularly the regex and clojure options) make this a powerful, yet easy to use validation tool.
 
-When validating, you can either pass an optional callback to handle validation transgressions, or by default Argh will throw a ValidationException.
+When validating, you can either pass an optional callback to handle validation transgressions, or by default Argh will throw a ValidationException. Argh::validate will also return true|false
 	
 Exposed Methods
 ===============
@@ -65,6 +65,7 @@ Supported Constraints:
 * ubound arg	- 	must not be above arg (e.g. "ubound 600")
 * regex arg	- 	must match regex given be arg
 * class name -	must be instanceof th given class
+* ?class name -	must be instanceof th given class or null
 
 See example usage below
 

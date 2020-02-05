@@ -19,6 +19,20 @@ try{
 		
 		]);
 } catch (ValidationException $ve){
+	echo "ValidationException: " . $ve->getMessage() . "<br>";
+}
+
+try{
+	$o = new \stdclass;
+	$o->test = new \stdclass;
+
+	
+	
+	Argh::validate($o, [
+		"test" => ["?class stdclass"],
+		
+		]);
+} catch (ValidationException $ve){
 	echo "ValidationException: " . $ve->getMessage();
 }
 

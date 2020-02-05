@@ -28,6 +28,7 @@ class Argh{
 	 * ubound arg	- 	must not be above arg (e.g. "ubound 600")
 	 * regex arg		- 	must match regex given be arg
 	 * class name		- 	must be instanceof given class
+	 * ?class name		- 	must be instanceof given class or null
 	*/
 
 	public static function validate($argArray, array $argDesc, Callable $callback = null): void{		
@@ -134,8 +135,13 @@ class Argh{
 						case "regex":
 							$this->checkRegex($c["constraintArg"],$curValue,$arg);
 							break;
+							
 						case "class":
 							$this->checkClass($c["constraintArg"],$curValue,$arg);
+							break;
+							
+						case "?class":
+							$this->checkClassOrNull($c["constraintArg"],$curValue,$arg, true);
 							break;
 							
 						case "optional"; // handled above - needed here to prevent exception
@@ -266,12 +272,20 @@ class Argh{
 		return true;
 	}
 	
-	private function checkClass($classSpec, $value, $arg)
+	private function checkClass(String $classSpec, $value, String $arg)
 	{
-		//$name = __NAMESPACE__ . "\\". $classSpec;
-		if(!$value instanceof $classSpec)
-		{
+		if (!$value instanceof $classSpec){
 			$this->handleValidationFail("Argument is not of class type: '$classSpec'", $arg, $value);
+			return false;
+		}
+		return true;		
+	}
+	
+	private function checkClassOrNull(String $classSpec, $value, String $arg)
+	{
+		if ($value == null) return true;
+		if (!$value instanceof $classSpec){
+			$this->handleValidationFail("Argument is not of class type: '$classSpec' or NULL", $arg, $value);
 			return false;
 		}
 		return true;		
