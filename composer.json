@@ -3,5 +3,12 @@
     "description": "Object and Array validation tool",
     "type": "library",
     "minimum-stability": "dev",
-    "require": {}
+    "require": {},
+	"autoload": {
+        "psr-4": { "xionic\\Argh\\": "src/" }
+    }
+}
+"repositories": {
+	"type": "vcs",
+	"url": "https://github.com/xionic/Argh"
 }
