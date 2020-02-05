@@ -6,9 +6,9 @@
     "require": {},
 	"autoload": {
         "psr-4": { "xionic\\Argh\\": "src/" }
-    }
-}
-"repositories": {
-	"type": "vcs",
-	"url": "https://github.com/xionic/Argh"
+    },
+	"repositories": {
+		"type": "vcs",
+		"url": "https://github.com/xionic/Argh"
+	}
 }
