@@ -1,13 +1,13 @@
 Argh
 ===============
 
-A powerful PHP helper class to validate arrays.
+A powerful PHP helper class to validate arrays and objects.
 
 The primary usage is to validate arguments passed to a web server (i.e. validating $_GET and $_POST vars) against a series of per variable checks.
 For example:
 
 ```php
-$av->validateArgs(
+Argh::validateArgs(
 	$_GET, //array to validate
 	array( //array of what to validate
 		"customerName"	=> array("string", "notblank"), //array of checks to perform on $_GET["customerName"]		
@@ -19,7 +19,7 @@ $av->validateArgs(
 It can be used for much more general purposes too. For instance, it can be used as part of a web services testing framework to validate responses to REST/JSON requests; Parsing the JSON into a PHP array using json_decode, one can then validate both the structure, and content of the resulting array thusly:
 
 ```php
-$av->validateArgs(
+Argh::validateArgs(
 	$decodedJSON,
 	array(
 		"Customer" => array("array"), //check that $decodedJSON["Customer"] is itself an array
@@ -39,17 +39,18 @@ $av->validateArgs(
 
 This flexible path specification structure combined with the checks below (particularly the regex and clojure options) make this a powerful, yet easy to use validation tool.
 
-When you setup you validator instance, you must give it a callback function to handle validation errors. See the examples for details
+When validating, you can either pass an optional callback to handle validation transgressions, or by default Argh will throw a ValidationException.
 	
 Exposed Methods
 ===============
 
-validateArgs( array $arguments, array $constraints )
+validateArgs( array $arguments, array $constraints, \Callable $callback = null )
 ----------------------------------------------------
 
 Parameters:
 * $arguments	-	An array to validate, e.g. $_POST
 * $constraints	-	An array of key -> properties, see example
+* $constraints	-	A callback to call on validations errors instead of throwing exceptions.
 
 Supported Constraints:
 
@@ -63,6 +64,7 @@ Supported Constraints:
 * lbound arg	-	must not be below arg (e.g. "lbound 2")
 * ubound arg	- 	must not be above arg (e.g. "ubound 600")
 * regex arg	- 	must match regex given be arg
+* class name -	must be instanceof th given class
 
 See example usage below
 
@@ -77,7 +79,7 @@ EXAMPLE USAGE:
 /**
 * callback function for argument validation - used by ArgValidator class
 */
-function handleArgValidationError($msg, $argName="", $argValue="")
+$handleArgValidationError = function ($msg, $argName="", $argValue="")
 {
 	echo "<pre>";
 	echo "There has been a validation error"
@@ -89,16 +91,15 @@ function handleArgValidationError($msg, $argName="", $argValue="")
 }
 
 //A closure can also be used instead of "handleArgValidationError"
-$av = new ArgValidator("handleArgValidationError");
-
-$apiargs = $av->validateArgs($_GET, array(
-	"test1" => array("string", "notblank"),
-	"test2" => array(function($a){return $a > 0;}),
-	"test3" => array("lbound 5","ubound 500"),
-	"test4" => array("regex /a/"),
-	"test5" => array("notzero"),
-	"test5" => array("array"),
-	)
+($_GET, array(
+		"test1" => array("string", "notblank"),
+		"test2" => array(function($a){return $a > 0;}),
+		"test3" => array("lbound 5","ubound 500"),
+		"test4" => array("regex /a/"),
+		"test5" => array("notzero"),
+		"test5" => array("array"),
+	),
+	$handleArgValidationError
 );
 ```
 

@@ -1,16 +1,7 @@
 <?php
+namespace xionic\Argh;
 
-require '../PHPArgValidator.class.php';
-
-$av = new ArgValidator(function($msg,$argName,$argValue){
-	echo "<pre>";
-	echo "There has been a validation error";
-	var_dump($msg);
-	var_dump($argName);
-	var_dump($argValue);
-	echo "</pre>";
-	//exit;
-});
+require '../Argh.class.php';
 
 $arr = array(
 	"test1" => "val1",
@@ -31,18 +22,23 @@ $arr = array(
 			"5"
 		)
 );
-$apiargs = $av->validateArgs($arr, array(
-	"test1" => array("string", "notblank"),
-	"test2" => array("array"),
-	"/test2/subkey1" => array("int"),
-	"/test2/subkey3/l2k1" => array("string"),
-	"/test2/subkey3/l2k2" => array("int"),
-	"/test2/subkey3/l2k3" => array("string", "notblank"),
-	"/test3/0/"		=> array("int"),
-	"/test3/*/"		=> array("int"), // this is expanded to /test3/0, /test3/1, ../test3/lengthofarray
-	"/test3/*/one/with/more"	=> array("string"),
-	)
-);
+
+try{
+	$apiargs = Argh::validate($arr, array(
+		"test1" => array("string", "notblank"),
+		"test2" => array("array"),
+		"/test2/subkey1" => array("int"),
+		"/test2/subkey3/l2k1" => array("string"),
+		"/test2/subkey3/l2k2" => array("int"),
+		"/test2/subkey3/l2k3" => array("string", "notblank"),
+		"/test3/0/"		=> array("int"),
+		"/test3/*/"		=> array("int"), // this is expanded to /test3/0, /test3/1, ../test3/lengthofarray
+		"/test3/*/one/with/more"	=> array("string"),
+		));
+} catch (ValidationException $ve){
+	echo "ValidationException: " . $ve->getMessage();
+}
+
 
 
 ?>

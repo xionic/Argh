@@ -1,16 +1,19 @@
 <?php
+namespace xionic\Argh;
+
+require_once("ValidationException.class.php");
 /**
 * Class to validate arguments to functions
 */
-class ArgValidator{
+class Argh{
 	
 	private $argArray, $argDesc, $errCallback;
 	
-	private $version = "PHPArgValidator Version 0.9";
+	private $version = "Argh Version 0.1";
 	
-	public function __construct($errCallback){
-		$this->errCallback = $errCallback;
+	private function __construct(){
 	}
+	
 	/**
 	 * function to validate GET args for the rest API and return an array of results. it supports validation constraints for each argument.
 	 * Supported Constraints:
@@ -24,30 +27,21 @@ class ArgValidator{
 	 * lbound arg	-	must not be below arg (e.g. "lbound 2")
 	 * ubound arg	- 	must not be above arg (e.g. "ubound 600")
 	 * regex arg		- 	must match regex given be arg
+	 * class name		- 	must be instanceof given class
 	*/
-	public function validateArgs($argArray, $argDesc)
-	{
+
+	public static function validate($argArray, array $argDesc, Callable $callback = null): void{		
+		(new Argh())->_validate($argArray, $argDesc, $callback);
+	}
+		
+	private function _validate($argArray, $argDesc, $callback){
 		$this->argArray = $argArray;
 		$this->argDesc = $argDesc;
-		
-		//validate our own args
-		if(!is_array($this->argDesc))
-		{
-			throw new Exception("Arguments Description must be an array");
-			return false;
-		}
-		elseif(!is_array($this->argArray))
-		{
-			throw new Exception("Arguments must be an array");
-			return false;
-		}
-		
-		//array to be returned
-		$retArr = array();
+		$this->callback = $callback;
 
 		//expand wildcards :S
 		$this->expandDescWildcards();
-		
+
 		//loop through each argument to be validated
 		foreach($this->argDesc as $arg => $constraintArr)
 		{	
@@ -86,7 +80,7 @@ class ArgValidator{
 		
 			if(!$this->checkArgExists($arg))
 			{
-				call_user_func($this->errCallback,"Missing argument: ". $arg, $arg, null);
+				$this->handleValidationFail("Missing argument: ". $arg, $arg, null);
 				continue;
 			}
 			//get the current arg value - multi-level support
@@ -140,6 +134,9 @@ class ArgValidator{
 						case "regex":
 							$this->checkRegex($c["constraintArg"],$curValue,$arg);
 							break;
+						case "class":
+							$this->checkClass($c["constraintArg"],$curValue,$arg);
+							break;
 							
 						case "optional"; // handled above - needed here to prevent exception
 							break;
@@ -151,17 +148,15 @@ class ArgValidator{
 					}
 				}
 			}
-			
-			$retArr[$arg] = $curValue;
 		}
-		return $retArr;
+		return true;
 	}	
 	
 	private function checkIsInt($value, $arg)
 	{
 		if(!$this->checkIsNumeric($value, $arg) || !is_int($value+0))
 		{
-			call_user_func($this->errCallback,"Argument is not an integer: ". $arg, $arg, $value);
+			$this->handleValidationFail("Argument is not an integer: ". $arg, $arg, $value);
 			return false;
 		}
 		return true;
@@ -170,7 +165,7 @@ class ArgValidator{
 	{
 		if(!is_numeric($value))
 		{
-			call_user_func($this->errCallback,"Argument is not numeric: ". $arg, $arg, $value);
+			$this->handleValidationFail("Argument is not numeric: ". $arg, $arg, $value);
 			return false;
 		}
 		return true;
@@ -180,7 +175,7 @@ class ArgValidator{
 	{	
 		if(!$this->checkIsNumeric($value, $arg) || $value == 0)
 		{
-			call_user_func($this->errCallback,"Argument is zero: ". $arg, $arg, $value);
+			$this->handleValidationFail("Argument is zero: ". $arg, $arg, $value);
 			return false;
 		}
 		return true;
@@ -191,7 +186,7 @@ class ArgValidator{
 	{
 		if(!$this->checkIsString($value, $arg) || $value == "")
 		{
-			call_user_func($this->errCallback,"Argument is a blank string: ". $arg, $arg, $value);
+			$this->handleValidationFail("Argument is a blank string: ". $arg, $arg, $value);
 			return false;
 		}
 		return true;
@@ -201,7 +196,7 @@ class ArgValidator{
 	{
 		if(!is_string($value))
 		{
-			call_user_func($this->errCallback,"Argument is not a string: ". $arg, $arg, $value);
+			$this->handleValidationFail("Argument is not a string: ". $arg, $arg, $value);
 			return false;
 		}
 		return true;
@@ -211,7 +206,7 @@ class ArgValidator{
 	{
 		if(!is_array($value))
 		{
-			call_user_func($this->errCallback,"Argument is not an array: ". $arg, $arg, $value);
+			$this->handleValidationFail("Argument is not an array: ". $arg, $arg, $value);
 			return false;
 		}
 		return true;
@@ -221,7 +216,7 @@ class ArgValidator{
 	{
 		if(call_user_func($func,$value) !== true)
 		{
-			call_user_func($this->errCallback,"Argument failed user function validation: ". $arg, $arg, $value);
+			$this->handleValidationFail("Argument failed user function validation: ". $arg, $arg, $value);
 			return false;
 		}
 		return true;
@@ -232,14 +227,12 @@ class ArgValidator{
 		$lbound = (float) $lbound;
 		if(!is_numeric($lbound))
 		{
-			call_user_func($this->errCallback,"Argument to lbound must be numeric: ". $arg, $arg, $value);
+			$this->handleValidationFail("Argument to lbound must be numeric: ". $arg, $arg, $value);
 			return false;
-		}
-		else
-		{
+		} else {
 			if(!$this->checkIsNumeric($value, $arg) || $value < $lbound)
 			{
-				call_user_func($this->errCallback,"Argument is below lbound(".$lbound."): ". $arg, $arg, $value);
+				$this->handleValidationFail("Argument is below lbound(".$lbound."): ". $arg, $arg, $value);
 				return false;
 			}
 			return true;
@@ -251,14 +244,12 @@ class ArgValidator{
 		$ubound = (float) $ubound;
 		if(!is_numeric($ubound))
 		{
-			call_user_func($this->errCallback,"Argument to ubound must be numeric: ". $arg, $arg, $value);
+			$this->handleValidationFail("Argument to ubound must be numeric: ". $arg, $arg, $value);
 			return false;
-		}
-		else
-		{
+		} else {
 			if(!$this->checkIsNumeric($value, $arg) || $value > $ubound)
 			{
-				call_user_func($this->errCallback,"Argument is below ubound(".$ubound."): ". $arg, $arg, $value);
+				$this->handleValidationFail("Argument is below ubound(".$ubound."): ". $arg, $arg, $value);
 				return false;
 			}
 			return true;
@@ -269,10 +260,21 @@ class ArgValidator{
 	{
 		if((preg_match($regex,$value)) !== 1)
 		{
-			call_user_func($this->errCallback,"Argument is does not match regex(".$regex."): ". $arg, $arg, $value);
+			$this->handleValidationFail("Argument is does not match regex(".$regex."): ". $arg, $arg, $value);
 			return false;
 		}
 		return true;
+	}
+	
+	private function checkClass($classSpec, $value, $arg)
+	{
+		//$name = __NAMESPACE__ . "\\". $classSpec;
+		if(!$value instanceof $classSpec)
+		{
+			$this->handleValidationFail("Argument is not of class type: '$classSpec'", $arg, $value);
+			return false;
+		}
+		return true;		
 	}
 
 	//get an arg from the array to validate - to support subarrays etc e.g. /var1/subvar1 /var1/subvar2
@@ -284,33 +286,55 @@ class ArgValidator{
 	private function checkArgExists($path){
 		return $this->_getArg($path,true);
 	}
+	
+	private function handleValidationFail(String $reason, String $offendingArg, $offendingValue){
+		if($this->callback != null){
+			call_user_func($this->callback,$reason, $offendingArg, $offendingValue);
+		} else {
+			throw new ValidationException($reason, $offendingArg, $offendingValue);
+		}
+	}
 
 	// function to do the work of both resolving an array "path" to a value, or checking if it's set
 	private function _getArg($path, $justCheckIsSet = false){
 		//shortcut
 		if(substr($path,0,1) != "/"){ // whether we have a path starting with / if not it's a normal single level argument
 			if($justCheckIsSet)
-				return array_key_exists($path, $this->argArray);	
+				if(is_object($this->argArray)){
+					return property_exists($this->argArray, $path);
+				} else {
+					return array_key_exists($path, $this->argArray);	
+				}
 			else
-				return $this->argArray[$path];
+				return $this->retrievePathValue($path, $this->argArray);
 		}		
 		$pathComponents = explode("/",$path);
 		//discard the first empty element
 		$pathComponents = array_slice($pathComponents,1);
 		//and the last if it's empty i.e. a traiing /
-		if($pathComponents[count($pathComponents)-1] == "")
+		if($pathComponents[count($pathComponents)-1] == ""){
 			$pathComponents = array_slice($pathComponents,0,count($pathComponents)-1);
-			
+		}
 		$returnVal = $this->argArray;
 		foreach($pathComponents as $c){
-			if($justCheckIsSet && !array_key_exists($c, $returnVal))
-				return false;
-			$returnVal = $returnVal[$c];
+			if($justCheckIsSet){
+				if(is_object($this->argArray)){
+						return property_exists($returnVal, $c);
+					} else {
+						return array_key_exists($c, $returnVal);	
+					}
+			}
+			$returnVal = $this->retrievePathValue($c, $returnVal);
+		}		
+		return $returnVal;
+	}
+	
+	private function retrievePathValue(String $elemName, $argList){ // $argList array or object
+		if(is_object($argList)){
+			return $argList->$elemName;
+		} else {
+			return $argList[$elemName];
 		}
-		if($justCheckIsSet)
-			return true;
-		else
-			return $returnVal;
 	}
 
 	//expand wildcards in the argDesc array e.g. /test/* -> /test/1 /test/2 /test/3 ... /test/[array length]
@@ -338,7 +362,6 @@ class ArgValidator{
 			}
 		}
 	}
-
 	
 	public function getVersion()
 	{
