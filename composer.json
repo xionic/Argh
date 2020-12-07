@@ -2,10 +2,19 @@
     "name": "xionic/argh",
     "description": "Object and Array validation tool",
     "type": "library",
-    "minimum-stability": "dev",
+    "authors": [
+        {
+            "name": "Nick Spargo"
+        }
+    ],
     "require": {},
 	"autoload": {
         "psr-4": { "xionic\\Argh\\": "src/" }
+    },
+    "config": {
+        "platform": {
+            "php": "7.0.0"
+        }
     }
 	
 }
